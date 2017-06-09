@@ -17,6 +17,7 @@
 <body>
 </body>
 <script src="https://static.leke.cn/scripts/common/mobile/common.js"></script>
+<script src="touch.js"></script>
 <script>
     class datePick{
         constructor(options){
@@ -24,6 +25,12 @@
         };
         init(options){
             this.render();
+        }
+        bind(){
+            console.log($('.Pop-box'))
+            $('.Pop-box').swipe(function(){
+                alert("滑动了");
+            })
         }
         render(){
             var arr=[2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019]
@@ -37,6 +44,7 @@
             var doms='<div class="lekePop"><div class="Pop-box"><p class="Pop-box-tar"></p><ul class="b-ul">'+list +
                     '</ul></div></div>';
             $('body').append(doms);
+            this.bind();
         }
     }
     const _datePick=new datePick()
