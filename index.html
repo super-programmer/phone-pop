@@ -28,10 +28,16 @@
         }
         bind(){
             $('.Pop-box').each(function(){
-                let startTy,endTy,lTapTimer,$maxheight=$(this).find('.b-ul').height(),dy=72;
+                let startTy,
+                        endTy,
+                        lTapTimer,
+                        $itemHeight=$('.b-ul .item-on').height(),
+                        $maxheight=$(this).find('.b-ul').height(),
+                        dy=72;
                 this.addEventListener('touchstart',function(e){
                     var touches = e.touches[0];
                     startTy = touches.clientY;
+                    $('.b-ul .item').removeClass('item-on')
                 })
                 this.addEventListener('touchmove',function(e){
                     var touches = e.touches[0];
@@ -48,10 +54,13 @@
                     startTy = touches.clientY;
                 })
                 this.addEventListener('touchend',function(e){
-                    dy=parseInt(dy/36)*36
+                    dy=parseInt(dy/$itemHeight)*$itemHeight;
+                    var $index=Math.abs(parseInt(dy/$itemHeight)-2)
+                    $('.b-ul .item').eq($index).addClass('item-on');
                     $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
                 })
             })
+
         }
         render(){
             var arr=[2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019]
