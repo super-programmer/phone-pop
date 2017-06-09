@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>移动端日历插件</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="https://static.leke.cn/styles/mobile/global.css">
+    <style>
+        .lekePop{position:fixed;top:0;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);z-index:9999;}
+        .lekePop .Pop-box{position:absolute;height:180px;width:100%;background:#fff;bottom:0;overflow:hidden;;}
+        .lekePop .Pop-box .Pop-box-tar{position:fixed;height:36px;width:100%;border:1px solid #ececec;bottom:72px;z-index:1;}
+        .lekePop .Pop-box .b-ul{transform:translate(0px, 72px) translateZ(0px);width:100%;}
+        .lekePop .Pop-box .item{height:36px;line-height:36px;font-size:14px;text-align:center;color:#666;}
+        .lekePop .Pop-box .item-on{color:#444;font-weight:bold;}
+    </style>
+</head>
+<body>
+</body>
+<script src="http://static.leke.cn/scripts/common/mobile/common.js"></script>
+<script>
+    class datePick{
+        constructor(options){
+            this.init(options);
+        };
+        init(options){
+            this.render();
+        }
+        render(){
+            var arr=[2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019]
+            var list='';
+            arr.forEach(function(item,i){
+                if(i==0){
+                    list+='<li class="item item-on">'+item+'</li>'
+                }
+                list+='<li class="item">'+item+'</li>'
+            })
+            var doms='<div class="lekePop"><div class="Pop-box"><p class="Pop-box-tar"></p><ul class="b-ul">'+list +
+                    '</ul></div></div>';
+            $('body').append(doms);
+        }
+    }
+    const _datePick=new datePick()
+</script>
+</html>
