@@ -17,7 +17,7 @@
 <body>
 </body>
 <script src="https://static.leke.cn/scripts/common/mobile/common.js"></script>
-<script src="touch.js"></script>
+<!--<script src="touch.js"></script>-->
 <script>
     class datePick{
         constructor(options){
@@ -27,9 +27,28 @@
             this.render();
         }
         bind(){
-            console.log($('.Pop-box'))
-            $('.Pop-box').swipe(function(){
-                alert("滑动了");
+            $('.Pop-box').each(function(){
+                let startTy,endTy,lTapTimer,$maxheight=$(this).find('.b-ul').height(),dy=72;
+                this.addEventListener('touchstart',function(e){
+                    var touches = e.touches[0];
+                    startTy = touches.clientY;
+                })
+                this.addEventListener('touchmove',function(e){
+                    var touches = e.touches[0];
+                    endTy = touches.clientY;
+                    if(startTy>=endTy){
+                        var sum=parseInt((startTy-endTy)/15);
+                        dy= dy>(108-$maxheight) ? dy-sum*36 : 108-$maxheight;
+                        console.log(sum,dy,$maxheight)
+                        $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
+                    }else{
+                        var sum=parseInt((endTy-startTy)/15);
+                        dy=dy<72 ? dy+sum*36 : 72;
+                        $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
+                    }
+                })
+                this.addEventListener('touchend',function(e){
+                })
             })
         }
         render(){
