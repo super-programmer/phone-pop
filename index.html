@@ -6,15 +6,16 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <link rel="stylesheet" href="https://static.leke.cn/styles/mobile/global.css">
     <style>
-        .lekePop{position:fixed;top:0;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);z-index:9999;}
+        .lekePop{position:fixed;top:100%;bottom:-180px;left:0;right:0;background:rgba(0,0,0,0.6);z-index:9999;}
         .lekePop .Pop-box{position:absolute;height:180px;width:100%;background:#fff;bottom:0;overflow:hidden;;}
-        .lekePop .Pop-box .Pop-box-tar{position:fixed;height:36px;width:100%;border:1px solid #ececec;bottom:72px;z-index:1;}
-        .lekePop .Pop-box .b-ul{transform:translate(0px, 72px) translateZ(0px);width:100%;}
+        .lekePop .Pop-box .Pop-box-tar{position:absolute;height:36px;width:100%;border:1px solid #ececec;border-right:none;border-left:none;bottom:72px;z-index:1;}
+        .lekePop .Pop-box .b-ul{transform:translate3d(0px,0px,0px);width:100%;padding:72px 0;}
         .lekePop .Pop-box .item{height:36px;line-height:36px;font-size:14px;text-align:center;color:#666;}
         .lekePop .Pop-box .item-on{color:#444;font-weight:bold;}
     </style>
 </head>
 <body>
+<input type="submit" value="日历" id="showDatePick">
 </body>
 <script src="https://static.leke.cn/scripts/common/mobile/common.js"></script>
 <!--<script src="touch.js"></script>-->
@@ -24,59 +25,184 @@
             this.init(options);
         };
         init(options){
+            this.callback=options.callback || function(){};
             this.render();
-        }
+        };
         bind(){
-            $('.Pop-box').each(function(){
+            var _this = this;
+            $('.Pop-box').forEach(function(item,i){
                 let startTy,
+                        startOriginTy,
                         endTy,
+                        $bUl = $('.b-ul').eq(i),
                         lTapTimer,
-                        $itemHeight=$('.b-ul .item-on').height(),
-                        $maxheight=$(this).find('.b-ul').height(),
-                        dy=72;
-                this.addEventListener('touchstart',function(e){
+                        lDurTimer,
+                        a = $bUl.css("transform"),
+                        $itemHeight = $bUl.find('.item-on').height(),
+                        $maxheight = $bUl.height(),
+                        dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[0];//获取初始transform值
+                $bUl[0].addEventListener('touchstart',function(e){
+                    $maxheight=$bUl.height();
+                    e.preventDefault();
+                    lTapTimer = new Date().getTime();
                     var touches = e.touches[0];
-                    startTy = touches.clientY;
-                    $('.b-ul .item').removeClass('item-on')
+                    startOriginTy = startTy = touches.clientY;
                 })
-                this.addEventListener('touchmove',function(e){
+                $bUl[0].addEventListener('touchmove',function(e){
+                    e.preventDefault();
                     var touches = e.touches[0];
                     endTy = touches.clientY;
+                    /*判断手势方向*/
                     if(startTy>=endTy){
+                        /*手势向上*/
                         var sum=parseInt(startTy-endTy);
-                        dy= dy>(108-$maxheight) ? dy-sum*2 : 108-$maxheight;
-                        $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
+                        sum+=parseInt(startTy-endTy);
+                        dy = dy>(180-$maxheight) ? parseInt(dy)-sum : 180-$maxheight;
+                        $bUl.css('transform','translateY('+dy+'px)');
                     }else{
-                        var sum=parseInt(endTy-startTy);
-                        dy=dy<72 ? dy+sum*2 : 72;
-                        $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
+                        /*手势向下*/
+                        var sum = parseInt(endTy-startTy);
+                        sum+= parseInt(endTy-startTy);
+                        dy= dy<0 ? parseInt(dy)+sum : 0;
+                        $bUl.css('transform','translateY('+dy+'px)')
                     }
                     startTy = touches.clientY;
                 })
-                this.addEventListener('touchend',function(e){
-                    dy=parseInt(dy/$itemHeight)*$itemHeight;
-                    var $index=Math.abs(parseInt(dy/$itemHeight)-2)
-                    $('.b-ul .item').eq($index).addClass('item-on');
-                    $(this).find('.b-ul').css('transform','translate(0px,'+dy+'px)')
+                $bUl[0].addEventListener('touchend',function(e){
+                    lDurTimer = new Date().getTime()-lTapTimer;
+                    e.preventDefault();
+                    $bUl.find('.item').removeClass('item-on');
+                    _this.slowSpeed(parseInt(startOriginTy-endTy)/lDurTimer,i,$itemHeight);
                 })
+            });
+            $('.lekePop').click(function(){
+                _this.swipeOut();
             })
-
-        }
+        };
+        slowSpeed(speed,i,$itemHeight){
+            var $bUl = $('.b-ul').eq(i),
+                    a = $bUl.css("transform"),
+                    $maxheight = $bUl.height(),
+                    dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[0],//获取初始transform值
+                    $duSpeed = Math.abs(speed / 30),
+                    $duration = speed * 0.3 + ($duSpeed * $duSpeed * 0.3) / 2,
+                    _this = this;
+            if(speed>=0){
+                dy = dy>(180-$maxheight) ? parseInt(dy)+$duration*2 : 180-$maxheight;
+            }else{
+                dy= dy<0 ? parseInt(dy)-$duration*2 : 0;
+            }
+            dy =Math.round(dy/$itemHeight)*$itemHeight;
+            var $index = Math.abs(Math.round(dy/$itemHeight));
+            $bUl.find('.item').eq($index).addClass('item-on');
+            $bUl.css('transform','translateY('+dy+'px)');
+            _this.swipe(i);
+        };
+        swipeOut(){
+            $('.lekePop').animate({
+                background:'rgba(0,0,0,0)',
+                top:'100%',
+                bottom:'-180px'
+            }, 1000,
+                    'ease-out'
+            );
+            var arr=[];
+            var _this=this;
+            $('.item-on').forEach(function(item,i){
+                arr.push($(item).html());
+            })
+            this.callback(arr);
+        };
+        swipeIn(){
+            $('.lekePop').animate({
+                background:'rgba(0,0,0,0.6)',
+                top:'0',
+                bottom:'0'
+            }, 1000,
+                    'ease-out'
+            );
+        };
         render(){
-            var arr=[2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019,2016,2017,2018,2019]
-            var list='';
-            arr.forEach(function(item,i){
-                if(i==0){
-                    list+='<li class="item item-on">'+item+'</li>'
-                }
-                list+='<li class="item">'+item+'</li>'
-            })
-            var doms='<div class="lekePop"><div class="Pop-box"><p class="Pop-box-tar"></p><ul class="b-ul">'+list +
-                    '</ul></div></div>';
+            var _date = new Date(),
+                    nowYear = _date.getFullYear(),
+                    nowMonth = _date.getMonth() + 1,
+                    allDay = new Date(nowYear, nowMonth, 0).getDate(),
+                    nowDay = _date.getDate(),
+                    doms = '<div class="lekePop"></div>';
             $('body').append(doms);
+            /*年份渲染*/
+            this.renderList(nowYear,1900,2900,'y');
+            /*月份渲染*/
+            this.renderList(nowMonth,1,12,'m');
+            /*日渲染*/
+            this.renderList(nowDay,1,allDay,'d');
             this.bind();
+        };
+        swipe(i) {
+            switch (i) {
+                case 0:
+                    var nowYear= $('.item-on').eq(0).html();
+                    var nowMonth=$('.item-on').eq(1).html();
+                    var allDay = new Date(nowYear,nowMonth,0).getDate();
+                    this.swipeChange(allDay,'y');
+                    break;
+                case 1:
+                    var nowYear=$('.item-on').eq(0).html();
+                    var nowMonth=$('.item-on').eq(1).html();
+                    var allDay = new Date(nowYear,nowMonth,0).getDate();
+                    this.swipeChange(allDay,'m');
+                    break;
+                case 2:
+                    break;
+
+            };
+        };
+        /*渲染列表函数*/
+        renderList(nowNum,star,end,type){
+            var type = type || '',
+                    list = '',
+                    num = 0;
+            for(var i=star; i<=end; i++){
+                if(i==nowNum){
+                    num=nowNum-star;
+                    list+='<li class="item item-on">'+i+'</li>'
+                }else{
+                    list+='<li class="item">'+i+'</li>'
+                }
+            }
+            var doms='<div class="Pop-box '+type+'"><p class="Pop-box-tar"></p><ul class="b-ul" style="transform:translateY('+(0-num*36)+'px)">'+list +
+                    '</ul></div>';
+            $('.lekePop').append(doms);
+            /*动态计算list数量然后定义宽度*/
+            var $width=1/$('.Pop-box').length*100;
+            $('.Pop-box').forEach(function(item,i){
+                $('.Pop-box').eq(i).css({'width':$width+'%','float':'left','left':$width*i+'%'})
+            })
+        };
+        /*滑动后替换数据*/
+        swipeChange(end,string){
+            var allDay = end;
+            var nowDay =$('.item-on').eq(2).html();
+            var list='';
+            for(var i=1;i<=allDay;i++){
+                 if(i==nowDay){
+                    list+='<li class="item item-on">'+i+'</li>'
+                }else{
+                    list+='<li class="item">'+i+'</li>'
+                }
+            }
+            $('.b-ul').eq(2).empty().append(list);
+            if(nowDay>=allDay){
+                $('.b-ul').eq(2).css('transform','translateY('+(-(allDay-1)*36)+'px)');
+                $('.b-ul').eq(2).find('.item').eq(allDay-1).addClass('item-on');
+            }
         }
     }
-    const _datePick=new datePick()
+    const _datePick=new datePick({'callback':function(data){
+        console.log(data);
+    }})
+    $('#showDatePick').click(function(){
+        _datePick.swipeIn();
+    })
 </script>
 </html>
