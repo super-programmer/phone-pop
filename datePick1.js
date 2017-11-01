@@ -42,48 +42,83 @@
             value: function bind() {
                 var _this = this;
                 $('.Pop-box').forEach(function (item, i) {
-                    var startTy = void 0,
-                        startOriginTy = void 0,
-                        endTy = void 0,
-                        $bUl = $('.b-ul').eq(i),
-                        lTapTimer = void 0,
-                        lDurTimer = void 0,
-                        a = $bUl.css("transform"),
-                        $itemHeight = $bUl.find('.item-on').height(),
-                        $maxheight = $bUl.height(),
-                        dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[0]; //获取初始transform值
-                    $bUl[0].addEventListener('touchstart', function (e) {
-                        $maxheight = $bUl.height();
+                    var $dom = $('.b-ul').eq(i),
+                        $itemHeight = $dom.find('.item-on').height(),
+                        star = '',
+                        lastTime = '',
+                        lastmoveStar = '',
+                        dur = '',
+                        end = '',
+                        dy = '',
+                        $maxheight = '',
+                         stopInertiaMove = '';
+                    $dom[0].addEventListener('touchstart', function (e) {
+                        var a = $dom.css("transform");
+                        dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[2];
+                        $maxheight = $dom.height()-180;
                         e.preventDefault();
-                        lTapTimer = new Date().getTime();
-                        var touches = e.touches[0];
-                        startOriginTy = startTy = touches.clientY;
+                        lastmoveStar = star = e.touches[0].clientY;
+                        lastTime = e.timeStamp || Date.now();
+                        stopInertiaMove = true;
                     });
-                    $bUl[0].addEventListener('touchmove', function (e) {
+                    $dom[0].addEventListener('touchmove', function (e) {
                         e.preventDefault();
-                        var touches = e.touches[0];
-                        endTy = touches.clientY;
-                        /*判断手势方向*/
-                        if (startTy >= endTy) {
-                            /*手势向上*/
-                            var sum = parseInt(startTy - endTy);
-                            sum += parseInt(startTy - endTy);
-                            dy = dy > 180 - $maxheight ? parseInt(dy) - sum : 180 - $maxheight;
-                            $bUl.css('transform', 'translateY(' + dy + 'px)');
-                        } else {
-                            /*手势向下*/
-                            var sum = parseInt(endTy - startTy);
-                            sum += parseInt(endTy - startTy);
-                            dy = dy < 0 ? parseInt(dy) + sum : 0;
-                            $bUl.css('transform', 'translateY(' + dy + 'px)');
+                        end = e.touches[0].clientY;
+                        dur = end - star + parseInt(dy);
+                        $dom.css('transform', 'translate3d(0,'+ dur +'px,0)');
+                        stopInertiaMove = true;
+                        var nowTime = e.timeStamp || Date.now();
+                        if(nowTime - lastTime > 300){
+                            lastTime = nowTime;
+                            lastmoveStar = end;
                         }
-                        startTy = touches.clientY;
                     });
-                    $bUl[0].addEventListener('touchend', function (e) {
-                        lDurTimer = new Date().getTime() - lTapTimer;
+                    $dom[0].addEventListener('touchend', function (e) {
                         e.preventDefault();
-                        $bUl.find('.item').removeClass('item-on');
-                        _this.slowSpeed(parseInt(startOriginTy - endTy) / lDurTimer, i, $itemHeight);
+                        var nowY = e.changedTouches[0].pageY;
+                        var nowTime = e.timeStamp || Date.now();
+                        var v = (nowY - lastmoveStar) / (nowTime - lastTime);
+                        stopInertiaMove = false;
+                        (function(v, startTime, dur,e) {
+                            var dir = v > 0 ? -1 : 1; //加速度方向
+                            var deceleration = dir*0.0006;
+                            var duration = Math.abs(v / deceleration); // 速度消减至0所需时间
+                            var dist = v * duration / 2; //最终移动多少
+                            function inertiaMove() {
+                                if(stopInertiaMove) return;
+                                var nowTime = new Date().getTime();
+                                var t = nowTime - startTime;
+                                var nowV = v + 10*deceleration;
+                                // 速度方向变化表示速度达到0了
+                                duration = duration-50;
+                                _this.slowSpeed(i,$itemHeight);
+
+                                if(duration < 0) {
+                                    if(dur % 36 != 0){
+                                        dur = Math.round(dur/36) * 36;
+                                    }
+                                    $dom.css('transform', 'translate3d(0,'+ dur +'px,0)');
+                                    if(dur >= 0){
+                                        $dom.css('transform', 'translate3d(0,'+ 0 +'px,0)');
+                                    }else if(dur <= -$maxheight){
+                                        $dom.css('transform', 'translate3d(0,'+ -$maxheight +'px,0)');
+                                    }
+                                    _this.swipe(i);
+                                    return;
+                                }
+                                var moveY = (v + nowV)/2 * 10;
+                                dur = (dur + moveY);
+                                $dom.css('transform', 'translate3d(0,'+ dur +'px,0)');
+                                if(dur >= 0){
+                                    $dom.css('transform', 'translate3d(0,'+ 0 +'px,0)');
+                                }else if(dur <= -$maxheight){
+                                    $dom.css('transform', 'translate3d(0,'+ -$maxheight +'px,0)');
+                                }
+                                setTimeout(inertiaMove, 10);
+                            }
+                            inertiaMove();
+                        })(v,nowTime,dur);
+
                     });
                 });
                 $('.lekePop').click(function () {
@@ -92,25 +127,16 @@
             }
         }, {
             key: 'slowSpeed',
-            value: function slowSpeed(speed, i, $itemHeight) {
+            value: function slowSpeed(i,$itemHeight) {
                 var $bUl = $('.b-ul').eq(i),
                     a = $bUl.css("transform"),
-                    $maxheight = $bUl.height(),
-                    dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[0],
+                    $dy = a.match(/\-?[0-9]+\.?[0-9]*/g)[2],
                 //获取初始transform值
-                    $duSpeed = Math.abs(speed / 30),
-                    $duration = speed * 0.3 + $duSpeed * $duSpeed * 0.3 / 2,
                     _this = this;
-                if (speed >= 0) {
-                    dy = dy > 180 - $maxheight ? parseInt(dy) + $duration * 2 : 180 - $maxheight;
-                } else {
-                    dy = dy < 0 ? parseInt(dy) - $duration * 2 : 0;
-                }
-                dy = Math.round(dy / $itemHeight) * $itemHeight;
-                var $index = Math.abs(Math.round(dy / $itemHeight));
+                $dy = Math.round($dy / $itemHeight) * $itemHeight;
+                var $index = Math.abs(Math.round($dy / $itemHeight));
+                $bUl.find('.item').removeClass('item-on');
                 $bUl.find('.item').eq($index).addClass('item-on');
-                $bUl.css('transform', 'translate3d(0,' + dy + 'px)',0);
-                _this.swipe(i);
             }
         }, {
             key: 'swipeOut',
@@ -178,7 +204,6 @@
             }
         }, {
             key: 'renderList',
-
             /*渲染列表函数*/
             value: function renderList(nowNum, star, end, type) {
                 var type = type || '',
@@ -216,7 +241,10 @@
                 }
                 $('.b-ul').eq(2).empty().append(list);
                 if (nowDay >= allDay) {
-                    $('.b-ul').eq(2).css('transform', 'translate3d(0,' + -(allDay - 1) * 36 + 'px),0');
+                    var $distance = (allDay-1) * 36;
+                    setTimeout(function(){
+                        $('.b-ul').eq(2).css('transform', 'translate3d(0,-' + $distance + 'px,0');
+                    },100)
                     $('.b-ul').eq(2).find('.item').eq(allDay - 1).addClass('item-on');
                 }
             }
